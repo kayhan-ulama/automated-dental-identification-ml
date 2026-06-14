@@ -174,14 +174,14 @@ df = pd.read_csv("/content/gdrive/MyDrive/Colab Notebooks/TEZ (Yazılacak Belge)
 
 dflist=df.values.tolist()#verileri listeye dönüştürme
 
-#random sayı tanımlayan fonksiyon, modu verdiğin uzunluğa göre alıyor
+#random sayı tanımlayan fonksiyon
 def randfunc(lenght):
     return random.randint(0,lenght-1)
 
 df1 = [1]# aynı sonuçlar için 1 ekleme
 df0 = [0]# aynı sonuçlar için 0 ekleme
 duplicates = []#tekrarlayan id'leri tutacak
-temp=[]#verileri geçiçi tutmak için. aynı olan id'leri bulup bir arada tuttuk 
+temp=[]      #verileri geçiçi tutmak için. aynı olan id'leri bulup bir arada tuttuk 
 
 for i in range(0,len(dflist)-1):
     k=1
@@ -200,29 +200,29 @@ for i in range(0,len(dflist)-1):
 aşağıdaki çıktı [eleman, id'si elmana eşit olan diğer elemanlar] 
 şeklinde tutuluyor her yeni satır tempin içindeki elemanların silinip tekrar dolmasını temsil ediyor
 
-ilk satırda [5,6] var yani dflist(satırlarımızın bulundugu değişken) 5. ve 6. indexinde bulunan elemanların id'leri aynıymış
+ilk satırda [5,6] var yani dflist(satırlarımızın bulundugu değişken) 5. ve 6. indexinde bulunan elemanların id'leri aynı.
 
-sorun: 3. satırda [13,14,15] indexleri id'si 12 olan satırların aynı olduğunu ifade ediyor ama sonraki satırda [14,15] var
-aslında zaten bildiğimiz şeyi tekrar atıyoruz tekrar eden kısımları silmemiz lazım.
+sorun: 3. satırda [13,14,15] indexlerinin id'si 12 olan satırların aynı olduğunu ifade ediyor. ama sonraki satırda [14,15] var
+aslında zaten bildiğimiz şeyi tekrar atıyoruz. tekrar eden kısımları silmemiz lazım.
 
 """
         
-temp=[]#geçici veriler için 
+temp=[]  #geçici veriler için 
 for i in (range(len(duplicates))):
     if len(duplicates[i])>1: 
-        temp.append(list(combinations(duplicates[i], 2)))#2 den fazla olan idleri kombine ettik(arada kendini tekrar edenler var
-                                                        #örn 2 defa [216,217] geçiyor onları temizlememiz lazım)
+        temp.append(list(combinations(duplicates[i], 2)))
+#2 den fazla olan idleri kombine ettik(arada kendini tekrar edenler var. örn 2 defa [216,217] geçiyor onları temizlememiz lazım)
 
                                                         
-#tempin tüm elemanlarının kombinasyonlarını tekrar ekledik burada matris (2 boyuttan 3 boyuta cıktı)
-#fark edildiği üzere aynı elemanlardan birden çok oldu son kısımdaki 7li yer özellikle ve çok karışık 
+#tempin tüm elemanlarının kombinasyonlarını tekrar ekledik burada matris 2 boyuttan 3 boyuta cıktı
+#fark edildiği üzere aynı elemanlardan birden çok oldu son kısımdaki 7'li yer özellikle çok karışık 
 
 #her değerden en fazla 1 tane tutmak istiyorum fazlalıklardan kurtulmak için
 teeth = []
 for i in range(len(temp)):
     for j in range(len(temp[i])):
       #temp elemanları atarken eğer atacağı eleman zaten teeth içinde varsa atmıyor
-        if ([temp[i][j]] not in teeth and temp[i][j] not in teeth): #yukarıda bahsettiğim sorun buradaki sorun pythonun değişkenlerinde [2,3] ve (2,3) aynı olduğunu kabul etmemesi çözümü basit typecast yapacağız karşılaştırmadan önce [veri] yapsanız yeter  
+        if ([temp[i][j]] not in teeth and temp[i][j] not in teeth):  
             teeth.append(temp[i][j])
                
 dfnew = [] #
@@ -236,7 +236,7 @@ for i in range(len(teeth)): #aynı olan idleri bulduk kombinasyonlarımızıda y
         dfnew.append(dflist[teeth[i][0]]+ dflist[rnd]+ df0)
        
         
-dfToCsv = pd.DataFrame(dfnew)# listeyi tekrar dataframe' e dönüştüreceğim ki csv yüklemesi kolay olsun
+dfToCsv = pd.DataFrame(dfnew) #listeyi tekrar dataframe'e dönüştüreceğiz ki csv yüklemesi kolay olsun
 dfToCsv.to_csv("/content/gdrive/MyDrive/Colab Notebooks/TEZ (Yazılacak Belge)/2-DfOpsResults.csv", index=None, header=None)
 
 -------------------------------------------------o------------------------------------------------------------o---------------------------------
