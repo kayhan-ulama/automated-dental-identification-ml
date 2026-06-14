@@ -1,0 +1,287 @@
+#1-RESTORASYON TESPİTİ
+from google.colab import drive
+drive.mount("/content/gdrive")
+
+#necessary libraries
+import matplotlib.pyplot as plt
+import numpy as np
+import os     
+import PIL
+import tensorflow as tf
+
+from tensorflow import keras
+from tensorflow.keras import layers
+from tensorflow.keras.models import Sequential
+
+#data directories
+TRAIN_DIRECTORY = os.path.join('/content/gdrive/MyDrive/Colab Notebooks/TEZ (Kodlar)/train data')
+TEST_DIRECTORY = os.path.join('/content/gdrive/MyDrive/Colab Notebooks/TEZ (Kodlar)/test data')
+
+#deciding batch and image size
+batch_size = 32
+IMG_SIZE = 150
+
+#train-validation split
+train_ds = tf.keras.preprocessing.image_dataset_from_directory(
+  TRAIN_DIRECTORY,
+  validation_split=0.2,
+  subset="training",
+  seed=123,
+  image_size=(IMG_SIZE, IMG_SIZE),
+  batch_size=batch_size)
+ 
+val_ds = tf.keras.preprocessing.image_dataset_from_directory(
+  TRAIN_DIRECTORY,
+  validation_split=0.2,
+  subset="validation",
+  seed=123,
+  image_size=(IMG_SIZE, IMG_SIZE),
+  batch_size=batch_size)
+
+#class names
+class_names = train_ds.class_names
+print(class_names)
+
+#9 images from the training dataset
+import matplotlib.pyplot as plt
+
+plt.figure(figsize=(7,7))
+for images, labels in train_ds.take(1):
+  for i in range(9):
+    ax = plt.subplot(3, 3, i + 1)
+    plt.imshow(images[i].numpy().astype("uint8"))
+    plt.title(class_names[labels[i]])
+    plt.axis("off")
+
+
+#Configuring the dataset for performance: https://www.tensorflow.org/tutorials/images/classification#configure_the_dataset_for_performance
+AUTOTUNE = tf.data.experimental.AUTOTUNE
+
+train_ds = train_ds.cache().shuffle(1000).prefetch(buffer_size=AUTOTUNE)
+val_ds = val_ds.cache().prefetch(buffer_size=AUTOTUNE)
+
+#applying augmentation to reduce overfitting
+data_augmentation = keras.Sequential([
+     layers.experimental.preprocessing.RandomFlip("horizontal_and_vertical", input_shape=(IMG_SIZE, IMG_SIZE,3)),
+     layers.experimental.preprocessing.RandomRotation(0.05),
+     layers.experimental.preprocessing.RandomZoom(0.02)
+    ])
+#augmented image display
+plt.figure(figsize=(7,7))
+for images, _ in train_ds.take(1):
+  for i in range(9):
+    augmented_images = data_augmentation(images)
+    ax = plt.subplot(3, 3, i + 1)
+    plt.imshow(augmented_images[0].numpy().astype("uint8"))
+    plt.axis("off")
+
+
+#MODEL
+model = Sequential([
+  data_augmentation,
+  layers.experimental.preprocessing.Rescaling(1./255),
+  layers.Conv2D(16, 3, padding='same', activation='relu'),
+  layers.MaxPooling2D(),
+  layers.Conv2D(32, 3, padding='same', activation='relu'),
+  layers.MaxPooling2D(),
+  layers.Conv2D(64, 3, padding='same', activation='relu'),
+  layers.MaxPooling2D(),
+  layers.Dropout(0.25),
+  layers.Flatten(),
+  layers.Dense(128, activation='relu'),
+  layers.Dense(5, activation='softmax')
+])
+
+#COMPILE
+model.compile(optimizer='adam',
+              loss=tf.keras.losses.SparseCategoricalCrossentropy(from_logits=True),
+              metrics=['accuracy'])
+
+model.summary()
+
+#TRAINING
+epochs = 25
+
+history = model.fit(
+  train_ds,
+  validation_data=val_ds,
+  epochs = epochs)
+
+
+#Visualizing training results
+acc = history.history['accuracy']
+val_acc = history.history['val_accuracy']
+
+loss=history.history['loss']
+val_loss=history.history['val_loss']
+
+epochs_range = range(epochs)
+
+plt.figure(figsize=(8, 8))
+plt.subplot(1, 2, 1)
+plt.plot(epochs_range, acc, label='Training Accuracy')
+plt.plot(epochs_range, val_acc, label='Validation Accuracy')
+plt.legend(loc='lower right')
+plt.title('Training and Validation Accuracy')
+
+plt.subplot(1, 2, 2)
+plt.plot(epochs_range, loss, label='Training Loss')
+plt.plot(epochs_range, val_loss, label='Validation Loss')
+plt.legend(loc='upper right')
+plt.title('Training and Validation Loss')
+plt.show()
+
+
+#TEST STEP
+from google.colab import files 
+from keras.preprocessing import image
+import numpy as np
+
+uploaded = files.upload() 
+
+result_dict = {"tid":[],"class":[],"conf":[]}
+ 
+for fn in uploaded.keys():
+  path = fn
+  img = image.load_img(path, target_size=(IMG_SIZE, IMG_SIZE))
+ 
+  img_array = image.img_to_array(img)
+  img_array = np.expand_dims(img_array, axis = 0)
+  
+  predictions = model.predict(img_array)
+  print("tooth id:{}, class:{}, conf:%{:.2f}".format(fn[:-4], np.argmax(predictions), 100 * np.max(predictions)))
+ 
+  result_dict["tid"].append(fn[:-4])
+  result_dict["class"].append(np.argmax(predictions))
+  result_dict["conf"].append(100 * np.max(predictions))
+  np.savetxt("/content/gdrive/MyDrive/Colab Notebooks/TEZ (Kodlar)/predictions.csv", predictions, delimiter=",")
+
+#write results to csv
+import pandas as pd
+result_df = pd.DataFrame.from_dict(result_dict)
+result_df.to_csv("/content/gdrive/MyDrive/Colab Notebooks/TEZ (Kodlar)/testing_results.csv")
+
+---------------------------------------- o-----------------------------------------------o------------------------------------------------
+#2-DATAFRAME OPERATIONS 
+from google.colab import drive
+drive.mount("/content/gdrive")
+import pandas as pd
+import random
+import itertools
+from itertools import combinations
+
+df = pd.read_csv("/content/gdrive/MyDrive/Colab Notebooks/TEZ (Yazılacak Belge)/1-DataVector.csv", header=None)
+
+dflist=df.values.tolist()#verileri listeye dönüştürme
+
+#random sayı tanımlayan fonksiyon, modu verdiğin uzunluğa göre alıyor
+def randfunc(lenght):
+    return random.randint(0,lenght-1)
+
+df1 = [1]# aynı sonuçlar için 1 ekleme
+df0 = [0]# aynı sonuçlar için 0 ekleme
+duplicates = []#tekrarlayan id'leri tutacak
+temp=[]#verileri geçiçi tutmak için. aynı olan id'leri bulup bir arada tuttuk 
+
+for i in range(0,len(dflist)-1):
+    k=1
+    alist = []
+    
+    for j in range(i+1,len(dflist)):
+        if dflist[i][0] == dflist[j][0]:
+            k+=1
+    if k>1:
+        for a in range(i,i+k):
+            temp.append(a)#aynı idleri kümele
+        duplicates.append(temp)
+        temp = []
+
+"""
+aşağıdaki çıktı [eleman, id'si elmana eşit olan diğer elemanlar] 
+şeklinde tutuluyor her yeni satır tempin içindeki elemanların silinip tekrar dolmasını temsil ediyor
+
+ilk satırda [5,6] var yani dflist(satırlarımızın bulundugu değişken) 5. ve 6. indexinde bulunan elemanların id'leri aynıymış
+
+sorun: 3. satırda [13,14,15] indexleri id'si 12 olan satırların aynı olduğunu ifade ediyor ama sonraki satırda [14,15] var
+aslında zaten bildiğimiz şeyi tekrar atıyoruz tekrar eden kısımları silmemiz lazım.
+
+"""
+        
+temp=[]#geçici veriler için 
+for i in (range(len(duplicates))):
+    if len(duplicates[i])>1: 
+        temp.append(list(combinations(duplicates[i], 2)))#2 den fazla olan idleri kombine ettik(arada kendini tekrar edenler var
+                                                        #örn 2 defa [216,217] geçiyor onları temizlememiz lazım)
+
+                                                        
+#tempin tüm elemanlarının kombinasyonlarını tekrar ekledik burada matris (2 boyuttan 3 boyuta cıktı)
+#fark edildiği üzere aynı elemanlardan birden çok oldu son kısımdaki 7li yer özellikle ve çok karışık 
+
+#her değerden en fazla 1 tane tutmak istiyorum fazlalıklardan kurtulmak için
+teeth = []
+for i in range(len(temp)):
+    for j in range(len(temp[i])):
+      #temp elemanları atarken eğer atacağı eleman zaten teeth içinde varsa atmıyor
+        if ([temp[i][j]] not in teeth and temp[i][j] not in teeth): #yukarıda bahsettiğim sorun buradaki sorun pythonun değişkenlerinde [2,3] ve (2,3) aynı olduğunu kabul etmemesi çözümü basit typecast yapacağız karşılaştırmadan önce [veri] yapsanız yeter  
+            teeth.append(temp[i][j])
+               
+dfnew = [] #
+for i in range(len(teeth)): #aynı olan idleri bulduk kombinasyonlarımızıda yaptık sadece dosyaya yazdırmak kaldı
+    dfnew.append(dflist[teeth[i][0]]+ dflist[teeth[i][1]]+ df1)
+    for j in range(0,3):
+        rnd=randfunc(len(dflist))
+        while((dflist[rnd][0]==dflist[teeth[i][0]][0] or dflist[teeth[i][1]][0]==dflist[rnd][0])):
+            rnd=randfunc(len(dflist))
+                    
+        dfnew.append(dflist[teeth[i][0]]+ dflist[rnd]+ df0)
+       
+        
+dfToCsv = pd.DataFrame(dfnew)# listeyi tekrar dataframe' e dönüştüreceğim ki csv yüklemesi kolay olsun
+dfToCsv.to_csv("/content/gdrive/MyDrive/Colab Notebooks/TEZ (Yazılacak Belge)/2-DfOpsResults.csv", index=None, header=None)
+
+-------------------------------------------------o------------------------------------------------------------o---------------------------------
+#3-DISTANCE METRICS
+from google.colab import drive
+drive.mount("/content/gdrive")
+import pandas as pd
+import numpy as np
+
+df = pd.read_csv("/content/gdrive/MyDrive/Colab Notebooks/TEZ (Yazılacak Belge)/2-DfOpsResults.csv", header=None)
+
+from sklearn.metrics import pairwise_distances
+
+dist_manhattan = []
+dist_euclidean = []
+dist_hamming = []
+dist_cosine = []
+
+for i in range(len(df)):
+    X=np.asarray(df.iloc[i:i+1,2:34])
+    Y=np.asarray(df.iloc[i:i+1,36:68])
+    
+    dist_manhattan.append(pairwise_distances(X,Y,metric='cityblock')[0][0])
+    dist_euclidean.append(pairwise_distances(X,Y,metric='euclidean')[0][0])
+    dist_hamming.append(pairwise_distances(X,Y,metric='hamming')[0][0])
+    dist_cosine.append(pairwise_distances(X,Y,metric='cosine')[0][0])
+
+manhattan_df=pd.DataFrame(data= dist_manhattan,index=None)
+euclid_df=pd.DataFrame(data= dist_euclidean,index=None)
+hamming_df=pd.DataFrame(data= dist_hamming,index=None)
+cosine_df=pd.DataFrame(data= dist_cosine,index=None)
+
+df["manhattan"]=dist_manhattan
+df["euclidean"]=dist_euclidean
+df["hamming"]=dist_hamming
+df["cosine"]=dist_cosine
+
+manhattan_score = df[[0,1,34, 35,'manhattan']]
+manhattan_score.to_csv('/content/gdrive/MyDrive/Colab Notebooks/TEZ (Yazılacak Belge)/3-manhattan_score.csv',header=None, index=False)
+
+euclidean_score = df[[0,1,34, 35,'euclidean']]
+euclidean_score.to_csv('/content/gdrive/MyDrive/Colab Notebooks/TEZ (Yazılacak Belge)/4-euclidean_score.csv',header=None, index=False)
+
+hamming_score = df[[0,1,34, 35,'hamming']]
+hamming_score.to_csv('/content/gdrive/MyDrive/Colab Notebooks/TEZ (Yazılacak Belge)/5-hamming_score.csv',header=None, index=False)
+
+cosine_score = df[[0,1,34, 35,'cosine']]
+cosine_score.to_csv('/content/gdrive/MyDrive/Colab Notebooks/TEZ (Yazılacak Belge)/6-cosine_score.csv',header=None, index=False)
