@@ -1,4 +1,4 @@
-#1-RESTORASYON TESPİTİ
+#1-RESTORASYON TESPİTİ 
 from google.colab import drive
 drive.mount("/content/gdrive")
 
