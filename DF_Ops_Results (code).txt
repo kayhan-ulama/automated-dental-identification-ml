@@ -1,0 +1,45 @@
+import pandas as pd
+import numpy as np
+
+df = pd.read_csv("/content/gdrive/MyDrive/Colab Notebooks/TEZ/DF_Ops_Results.csv", header=None)
+
+from sklearn.metrics import pairwise_distances
+df = pd.read_csv("/content/gdrive/MyDrive/Colab Notebooks/TEZ/DF_Ops_Results.csv",header=None)
+
+dist_manhattan = []
+dist_euclidean = []
+dist_hamming = []
+dist_cosine = []
+
+for i in range(len(df)):
+    X=np.asarray(df.iloc[i:i+1,2:34])
+    Y=np.asarray(df.iloc[i:i+1,36:68])
+    
+    dist_manhattan.append(pairwise_distances(X,Y,metric='cityblock')[0][0])
+    dist_euclidean.append(pairwise_distances(X,Y,metric='euclidean')[0][0])
+    dist_hamming.append(pairwise_distances(X,Y,metric='hamming')[0][0])
+    dist_cosine.append(pairwise_distances(X,Y,metric='cosine')[0][0])
+
+
+manhattan_df=pd.DataFrame(data= dist_manhattan,index=None)
+euclid_df=pd.DataFrame(data= dist_euclidean,index=None)
+hamming_df=pd.DataFrame(data= dist_hamming,index=None)
+cosine_df=pd.DataFrame(data= dist_cosine,index=None)
+
+
+df["manhattan"]=dist_manhattan
+df["euclidean"]=dist_euclidean
+df["hamming"]=dist_hamming
+df["cosine"]=dist_cosine
+
+manhattan_score = df[[0,1,34, 35,'manhattan']]
+manhattan_score.to_csv('/content/gdrive/MyDrive/Colab Notebooks/TEZ/score_manhattan.csv',header=None, index=False)
+
+euclidean_score = df[[0,1,34, 35,'euclidean']]
+euclidean_score.to_csv('/content/gdrive/MyDrive/Colab Notebooks/TEZ/score_euclidean.csv',header=None, index=False)
+
+hamming_score = df[[0,1,34, 35,'hamming']]
+hamming_score.to_csv('/content/gdrive/MyDrive/Colab Notebooks/TEZ/score_hamming.csv',header=None, index=False)
+
+cosine_score = df[[0,1,34, 35,'cosine']]
+cosine_score.to_csv('/content/gdrive/MyDrive/Colab Notebooks/TEZ/score_cosine.csv',header=None, index=False)
